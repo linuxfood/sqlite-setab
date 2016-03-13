@@ -1,0 +1,17 @@
+{
+    "tables": [
+        "CREATE VIRTUAL TABLE tag_latency USING setab(tag TEXT, latency INTEGER, listen_port=6000, batch_size=100, window_size_ms=25000);",
+        "CREATE VIRTUAL TABLE tag_summary USING setab(tag_group TEXT, latency_sum INTEGER, latency_count INTEGER, next_hop_service='tcp://localhost:6001');"
+    ],
+    "selections": [
+        "SELECT ts, group_concat(tag), sum(latency), count(latency) FROM tag_latency;"
+    ],
+    "insertions": [
+        {
+            "query": "INSERT INTO tag_summary (ts,tag_group,latency_sum,latency_count) VALUES (?, ?, ?, ?);",
+            "selections": {
+                "0": [0, 1, 2, 3]
+            }
+        }
+    ]
+}

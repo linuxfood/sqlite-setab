@@ -1,0 +1,17 @@
+{
+    "tables": [
+        "CREATE TABLE agg_latency (tag_group TEXT, avg_latency INTEGER);",
+        "CREATE VIRTUAL TABLE inc_agg_latency USING setab (tag_group TEXT, latency_sum INTEGER, latency_count INTEGER, batch_size=100, window_size=60000, listen_port=6001);"
+    ],
+    "selections": [
+        "SELECT tag_group, sum(latency_sum) / sum(latency_count) FROM inc_agg_latency GROUP BY tag_group;"
+    ],
+    "insertions": [
+        {
+            "query": "INSERT INTO agg_latency (tag_group,avg_latency) VALUES (?, ?);",
+            "selections": {
+                "0": [0, 1]
+            }
+        }
+    ]
+}
