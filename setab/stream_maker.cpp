@@ -22,6 +22,9 @@
  */
 #include "Util.h"
 
+#include <folly/Range.h>
+#include <folly/String.h>
+
 static vector<string> messageValues = {
     "mass-blaster",
     "horsey",
@@ -33,18 +36,17 @@ static vector<string> messageValues = {
 int main(int argc, char** argv) {
     int port = 6000;
     milliseconds jitterMs(1500);
-    string thing;
-    if (argc == 4) {
-        port = std::strtol(argv[1], nullptr, 10);
-        if (!port) {
+    if (argc == 3) {
+        char* end = nullptr;
+        port = std::strtol(argv[1], &end, 10);
+        if (end == argv[1] || !port) {
             std::cout << "Port is bad.\n";
             return 1;
         }
-        string thing{argv[2]};
-
-        milliseconds jitterMs(std::strtoll(argv[3], nullptr, 10));
-        if (!jitterMs.count()) {
-            jitterMs = milliseconds(1500);
+        end = nullptr;
+        milliseconds jitterMsArg(std::strtoll(argv[2], &end, 10));
+        if (end != argv[2] && jitterMsArg.count()) {
+            jitterMs = jitterMsArg;
         }
     }
 
@@ -66,8 +68,8 @@ int main(int argc, char** argv) {
             std::to_string(randomValue(1500, 12000))
         };
         string content = joinVector(msgContent, string(1, '\036'));
-        ZmqMsg m(joinVector(msgContent, string(1, '\036')));
-        std::cout << "Sending: '" << content << "'\n";
+        ZmqMsg m(content);
+        std::cout << "Sending: `" << folly::cEscape<string>(folly::StringPiece(content)) << "`\n";
         if (zmq_msg_send((zmq_msg_t*)m, zsock, 0) == -1) {
             std::cout << "Unable to send message: " << zmq_strerror(zmq_errno()) << "\n";
         }

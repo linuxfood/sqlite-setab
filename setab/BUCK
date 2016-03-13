@@ -29,17 +29,22 @@ cxx_library(
     headers = [
         'ZmqMsg.h',
         'Util.h',
-    ]
+    ],
+    deps = [
+        '//externals/folly:folly',
+    ],
 )
 
 cxx_binary(
     name = 'setab',
     srcs = [
-        'setab.cpp',
+        'engine.cpp',
     ],
     deps = [
         ':sqlite',
         ':util',
+        '//externals/folly:folly',
+        '//externals/boost:algorithm',
         '//externals/zeromq:zeromq',
     ],
 )

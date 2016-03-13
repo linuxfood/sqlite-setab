@@ -22,6 +22,13 @@
  */
 #include "Util.h"
 
+#include <folly/Conv.h>
+#include <folly/FileUtil.h>
+#include <folly/String.h>
+#include <folly/dynamic.h>
+#include <folly/json.h>
+#include <boost/type_traits.hpp>
+
 enum class ColumnType {
     INTEGER = SQLITE_INTEGER,
     TEXT = SQLITE_TEXT,
@@ -254,35 +261,38 @@ public:
     void rename(string tableName) { tableName_ = tableName; }
 
     bool parse(ZmqMsg&& m, vector<ColumnValue>& columns) {
-        char* valuesBegin = static_cast<char*>(m.data());
-        char* valuesEnd = valuesBegin;
-        char* dataEnd = valuesBegin + m.size();
+        folly::StringPiece rowData{static_cast<const char*>(m.data()), m.size()};
+        std::cout << "Raw message:`" << folly::cEscape<string>(rowData) << "`\n";
 
-        int col = 0;
-        ColumnValue v;
-        while(valuesEnd <= dataEnd) {
-            while(*valuesEnd != ColSep && valuesEnd != dataEnd) valuesEnd++;
+        vector<folly::StringPiece> rawColumns;
+        folly::split(ColSep, rowData, rawColumns);
 
-            if (columnTypes_[col] == ColumnType::INTEGER) {
-                char* x = nullptr;
-                v = std::make_tuple(ColumnType::INTEGER, string{}, std::strtoll(valuesBegin, &x, 10));
-                // Failed parse of integer.
-                if (x == valuesBegin) {
-                    std::cout << "failed ts parse\n";
-                    return false;
-                }
-            } else if (columnTypes_[col] == ColumnType::TEXT) {
-                v = std::make_tuple(ColumnType::TEXT, string(valuesBegin, valuesEnd), -1L);
-            }
-            columns.push_back(v);
-            valuesBegin = ++valuesEnd;
-            col++;
+        if (rawColumns.size() != columnTypes_.size()) {
+            std::cout << "Message has wrong column count. "
+                      << rawColumns.size() << " != " << columnTypes_.size() << "\n";
+            return false;
         }
 
-        if (col < columnTypes_.size()) {
-            std::cout << "Didn't read enough columns from message: Expected:"
-                      << columnTypes_.size() << " Got:" << col << "\n";
-            return false;
+        for (size_t i=0; i < columnTypes_.size(); i++) {
+            ColumnValue v;
+            switch (columnTypes_[i]) {
+                case ColumnType::INTEGER:
+                    try {
+                        v = std::make_tuple(ColumnType::INTEGER, string{}, folly::to<int64_t>(rawColumns[i]));
+                    } catch (const std::range_error& ex) {
+                        std::cout << "Invalid message. Expected INTEGER, got TEXT.\n";
+                        return false;
+                    }
+                    break;
+                case ColumnType::TEXT:
+                    v = std::make_tuple(ColumnType::TEXT, rawColumns[i].str(), -1);
+                    break;
+                default:
+                    std::cout << "UNKNOWN COLUMN TYPE: " << static_cast<int>(columnTypes_[i]) << "\n";
+                    return false;
+            }
+
+            columns.push_back(v);
         }
 
         return true;
@@ -596,158 +606,130 @@ sqlite3_module setab_module {
 };
 
 int main(int argc, char** argv) {
-    const char* dbName = "test.db";
-    bool secondary = false;
-    if (argc > 1) {
-        dbName = "test1.db";
-        secondary = true;
+    const char* dbName;
+    folly::dynamic queryConfig = folly::dynamic::object;
+    if (argc < 3) {
+        std::cout << "Usage: " << argv[0] << " DB QUERY_CONFIG\n";
+        return 1;
+    } else {
+        dbName = argv[1];
+        string configContent;
+        folly::readFile(argv[2], configContent);
+        queryConfig = folly::parseJson(configContent);
     }
-    sqlite3* db = nullptr;
-    int rc = sqlite3_open(dbName, &db);
-    if (rc) {
-        std::cout << "Couldn't open db: " << sqlite3_errmsg(db) << "\n";
-        sqlite3_close(db);
+
+    Sqlite3Db db;
+    try {
+        db.open(dbName);
+    } catch (const Sqlite3Exception& ex) {
+        std::cout << "Couldn't open db: " << ex.what();
         return 1;
     }
-    if (sqlite3_create_module_v2(db, "setab", &setab_module, nullptr, nullptr)) {
-        std::cout << "Couldn't make module: " << sqlite3_errmsg(db) << "\n";
-        sqlite3_close(db);
+
+    if (sqlite3_create_module_v2(db.raw(), "setab", &setab_module, nullptr, nullptr)) {
+        std::cout << "Couldn't make module: " << db.errmsg() << "\n";
         return 1;
     }
     std::cout << "Initialized setab module..\n";
 
-    sqlite3_stmt* runTbl = nullptr, *insertTbl = nullptr;
-
-    const char* createSQL = R"SQL(
-CREATE VIRTUAL TABLE test_table1 USING setab (
-    tag TEXT,
-    latency INTEGER,
-
-    listen_port=6000,
-    batch_size=10,
-    window_size_ms=60000
-);
-)SQL";
-
-    const char* create2SQL = R"SQL(
-CREATE VIRTUAL TABLE test_table2 USING setab (
-    tag_group TEXT,
-    latency_sum INTEGER,
-    latency_count INTEGER,
-    
-    next_hop_service='tcp://localhost:6001',
-);
-)SQL";
-
-    const char* create3SQL = R"SQL(
-CREATE VIRTUAL TABLE test_table3 USING setab (
-    tag_group TEXT,
-    latency_sum INTEGER,
-    latency_count INTEGER,
-
-    listen_port=6001,
-    batch_size=10,
-    window_size_ms=60000
-);
-)SQL";
-
-    const char* runSQL = R"SQL(
-SELECT ts, sum(latency), count(latency), group_concat(tag) FROM test_table1;
-)SQL";
-
-    const char* insertSQL = R"SQL(
-INSERT INTO test_table2 (ts,tag_group,latency_sum,latency_count) VALUES(?,?,?,?);
-)SQL";
-
-    const char* run2SQL = "SELECT ts, latency_sum, latency_count, tag_group FROM test_table3;";
-
-    const char* table1SQL = nullptr;
-    const char* table2SQL = nullptr;
-    const char* query1SQL = nullptr;
-    const char* query2SQL = nullptr;
-
-    if (secondary) {
-        table1SQL = create3SQL;
-        query1SQL = run2SQL;
-    } else {
-        table1SQL = createSQL;
-        table2SQL = create2SQL;
-        query1SQL = runSQL;
-        query2SQL = insertSQL;
+    if (!queryConfig.count("tables") ||
+        !queryConfig.count("selections") ||
+        !queryConfig.count("insertions")) {
+        std::cout << "Configuration seems to be missing 'tables', 'selections', or 'insertions'\n";
+        return 1;
     }
 
-    char* errorMsg = nullptr;
-    if (table1SQL) {
-        sqlite3_exec(db, table1SQL, nullptr, nullptr, &errorMsg);
-        if (errorMsg) {
-            std::cout << "Unable to create vtable: " << errorMsg;
-            sqlite3_free(errorMsg);
-            sqlite3_close(db);
+    std::vector<sqlite3_stmt*> selections;
+    std::vector<sqlite3_stmt*> insertions;
+
+    for (const auto& createSQL : queryConfig["tables"]) {
+        try {
+            db.exec(createSQL.c_str());
+        } catch (const Sqlite3Exception& ex) {
+            std::cout << "Unable to create table: " << ex.what();
             return 1;
         }
-        std::cout << "Created test_table1..\n";
     }
 
-    if (table2SQL) {
-        sqlite3_exec(db, table2SQL, nullptr, nullptr, &errorMsg);
-        if (errorMsg) {
-            std::cout << "Unable to create vtable: " << errorMsg;
-            sqlite3_free(errorMsg);
-            sqlite3_close(db);
+    for (const auto& querySQL : queryConfig["selections"]) {
+        selections.push_back(nullptr);
+        if (sqlite3_prepare_v2(db.raw(), querySQL.c_str(), -1, &selections.back(), nullptr)) {
+            std::cout << "Unable to compile selection query: " << db.errmsg() << "\n";
             return 1;
         }
-        std::cout << "Created test_table2..\n";
+        std::cout << "Compiled query: " << querySQL << "\n";
     }
 
-    if (query1SQL) {
-        if (sqlite3_prepare_v2(db, query1SQL, -1, &runTbl, nullptr)) {
-            std::cout << "Unable to compile runTbl query: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_close(db);
+    for (const auto& insertData : queryConfig["insertions"]) {
+        if (!insertData.count("query")) {
+            std::cout << "No query associated for insertion. Need key: `query`.\n";
             return 1;
         }
-        std::cout << "Compiled query: " << query1SQL << "\n";
-    }
-
-    if (query2SQL) {
-        if (sqlite3_prepare_v2(db, insertSQL, -1, &insertTbl, nullptr)) {
-            std::cout << "Unable to compile insertTbl query: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_close(db);
+        if (!insertData.count("selections")) {
+            std::cout << "No data to insert for insertion. Need key: `selections`.\n";
+        }
+        const char* insertSQL = insertData["query"].c_str();
+        insertions.push_back(nullptr);
+        if (sqlite3_prepare_v2(db.raw(), insertSQL, -1, &insertions.back(), nullptr)) {
+            std::cout << "Unable to compile insertion query: " << db.errmsg() << "\n";
             return 1;
         }
-        std::cout << "Compiled query: " << query2SQL << "\n";
+        std::cout << "Compiled query: " << insertSQL << "\n";
     }
 
-    auto ts = nowMs();
+    std::unordered_set<size_t> fucks;
+    fucks.reserve(selections.size());
     while (true) {
-        while ((rc = sqlite3_step(runTbl)) == SQLITE_ROW) {
-            int64_t rts = sqlite3_column_int64(runTbl, 0);
-            int64_t latencySum = sqlite3_column_int64(runTbl, 1);
-            int64_t latencyCount = sqlite3_column_int64(runTbl, 2);
-            const unsigned char* value = sqlite3_column_text(runTbl, 3);
-            std::cout << "ts: " << rts
-                      << " sum:" << latencySum
-                      << " cnt:" << latencyCount
-                      << " value: '" << value << "'\n";
-            if (insertTbl) {
-                sqlite3_bind_int64(insertTbl, 1, rts);
-                sqlite3_bind_text(insertTbl, 2, (char*)value, -1, SQLITE_TRANSIENT);
-                sqlite3_bind_int64(insertTbl, 3, latencySum);
-                sqlite3_bind_int64(insertTbl, 4, latencyCount);
-
-                if (sqlite3_step(insertTbl) != SQLITE_DONE) {
-                    std::cout << "Failed to write to test_table2:" << sqlite3_errmsg(db) << "\n";
-                }
-                sqlite3_reset(insertTbl);
+        int i=0;
+        // Advance all selections one step.
+        // Reset them if they finish, and abort if there's an error.
+        for (auto stmt : selections) {
+            int rc = sqlite3_step(stmt);
+            switch (rc) {
+                case SQLITE_ROW:
+                    std::cout << "Got row from: " << i << "\n";
+                    fucks.insert(i);
+                    break;
+                case SQLITE_DONE:
+                    std::cout << "Completed: " << i << "\n";
+                    sqlite3_reset(stmt);
+                    break;
+                default:
+                    std::cout << "Query `" << sqlite3_sql(stmt) << "` experienced an error:" << db.errmsg();
+                    std::cout << "Aborting.\n";
+                    return 1;
             }
+            i++;
         }
-        std::cout << "Query finished.\n";
-        if (rc != SQLITE_DONE) {
-            std::cout << "query exited with error: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_finalize(runTbl);
-            sqlite3_close(db);
-            return 1;
+
+        int j=0;
+        // Perform all the requested insertions. Failed writes also abort the engine.
+        for (auto insertStmt : insertions) {
+            int c=1;
+            bool canInsert = true;
+            for (auto& selectData : queryConfig["insertions"][j]["selections"].items()) {
+                size_t selectIndex = selectData.first.asInt();
+                if (!fucks.count(selectIndex)) {
+                    canInsert = false;
+                    continue;
+                }
+                sqlite3_stmt* selectStmt = selections[selectIndex];
+                for (auto& columnIndex : selectData.second) {
+                    //const char* colName = sqlite3_column_name(selectStmt, columnIndex.getInt());
+                    sqlite3_value* value = sqlite3_column_value(selectStmt, columnIndex.getInt());
+                    sqlite3_bind_value(insertStmt, c, value);
+                    c++;
+                }
+            }
+            if (canInsert && sqlite3_step(insertStmt) != SQLITE_DONE) {
+                std::cout << "Failed to write to table " << j << "\n";
+                std::cout << "Aborting.\n";
+                return 1;
+            }
+            sqlite3_reset(insertStmt);
+            j++;
         }
-        sqlite3_reset(runTbl);
+        fucks.clear();
     }
     return 0;
 }
