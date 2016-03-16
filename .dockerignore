@@ -1,0 +1,4 @@
+externals/*/lib
+externals/*/include
+buck-out/*
+.buckconfig.local

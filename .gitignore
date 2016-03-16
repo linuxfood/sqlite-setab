@@ -1,0 +1,6 @@
+*.swp
+buck-out/*
+.buckconfig.local
+
+externals/*/include
+externals/*/lib

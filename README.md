@@ -83,12 +83,16 @@ Query finished.
 ## Building
 
 1. Get Buck. <https://buckbuild.com/>
-2. Be a wizard.
-3. You'll need to build ZeroMQ <http://zeromq.org> and lay it out in a way Buck expects.
-4. run `buck build sqlite-setab/...`
+2. Make sure you have boost, double-conversion, folly, gflags, glog, zeromq
+3. `buck build build/:setup_ubuntu`
+4. run `buck build setab/...`
 
 If you successfully pull that off... Drop me a line.
 The code is absolutely riddled with bugs right now.
+
+## Building with Docker
+
+This doesn't work just yet, but in the future you'll be able to run `docker build .`
 
 ## License
 
