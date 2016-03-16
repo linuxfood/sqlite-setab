@@ -1,0 +1,11 @@
+[cxx]
+  cc     = /nix/var/nix/profiles/default/bin/gcc
+  cpp    = /nix/var/nix/profiles/default/bin/gcc
+  aspp   = /nix/var/nix/profiles/default/bin/gcc
+
+  cxx    = /nix/var/nix/profiles/default/bin/g++
+  cxxpp  = /nix/var/nix/profiles/default/bin/g++
+  ld     = /nix/var/nix/profiles/default/bin/g++
+  cxxflags = -std=c++14 -D_GLIBCXX_USE_CXX11_ABI=0 -fPIC -g -fno-omit-frame-pointer -O3 -Wall -pthread
+
+  ldflags = -Wl,-rpath=/nix/var/nix/profiles/default/lib

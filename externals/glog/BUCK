@@ -1,0 +1,12 @@
+prebuilt_cxx_library(
+    name = 'glog',
+    header_namespace = 'glog',
+    exported_headers = subdir_glob([
+        ("include/glog", "**/*.h"),
+    ]),
+    visibility = [
+        'PUBLIC',
+    ],
+    deps = [
+    ],
+)

@@ -1,0 +1,17 @@
+prebuilt_cxx_library(
+    name = 'folly',
+    lib_name = 'folly',
+    header_namespace = 'folly',
+    exported_headers = subdir_glob([
+        ("include/folly", "**/*.h"),
+    ]),
+    visibility = [
+        'PUBLIC',
+    ],
+    deps = [
+        '//externals/boost:type_traits',
+        '//externals/boost:iterator',
+        '//externals/glog:glog',
+        '//externals/double-conversion:double-conversion',
+    ],
+)

@@ -1,0 +1,10 @@
+[cxx]
+  cc     = /usr/bin/gcc-5
+  cpp    = /usr/bin/gcc-5
+  aspp   = /usr/bin/gcc-5
+
+  cxx    = /usr/bin/g++-5
+  cxxpp  = /usr/bin/g++-5
+  ld     = /usr/bin/g++-5
+  cxxflags = -std=c++14 -Wall -pthread -g
+  ldflags = -ldl -lrt -pthread

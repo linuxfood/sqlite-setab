@@ -1,0 +1,13 @@
+genrule(
+    name = 'setup_nix',
+    srcs = [ 'setup_symlinks.sh' ],
+    out = '.build_nix',
+    cmd = 'chmod +x $SRCS && $SRCS /nix/var/nix/profiles/default $OUT',
+)
+
+genrule(
+    name = 'setup_ubuntu',
+    srcs = [ 'setup_symlinks.sh' ],
+    out = '.build_nix',
+    cmd = 'chmod +x $SRCS && $SRCS /usr/local $OUT',
+)

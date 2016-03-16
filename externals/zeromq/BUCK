@@ -1,0 +1,12 @@
+prebuilt_cxx_library(
+    name = 'zeromq',
+    lib_name = 'zmq',
+    header_namespace = 'zeromq',
+    exported_headers = {
+        'zmq.h': 'include/zmq.h',
+        'zmq_utils.h': 'include/zmq_utils.h',
+    },
+    visibility = [
+        'PUBLIC',
+    ],
+)
