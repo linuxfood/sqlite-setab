@@ -8,5 +8,7 @@ prebuilt_cxx_library(
         'PUBLIC',
     ],
     deps = [
+        '//externals/google-gflags:gflags',
+        '//externals/unwind:unwind',
     ],
 )

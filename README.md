@@ -92,7 +92,12 @@ The code is absolutely riddled with bugs right now.
 
 ## Building with Docker
 
-This doesn't work just yet, but in the future you'll be able to run `docker build .`
+This works now! This is probably the easiest way to build and run this.
+
+```
+sudo docker build -t real_deal .
+sudo docker run real_deal /root/sqlite-setab/buck-out/gen/setab/setab test.db /root/sqlite-setab/setab/test.json
+```
 
 ## License
 

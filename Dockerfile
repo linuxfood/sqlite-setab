@@ -1,6 +1,6 @@
 FROM pjameson/buck-folly-watchman:latest
 
-# TODO: Figure out why this doesn't work.
+# Commented until I have docker >=1.8
 #ARG ZMQ_SHA=96c9e4aabda5c040b29761638706a51f878a8bf0
 
 RUN git clone https://github.com/zeromq/libzmq.git /usr/src/libzmq && \
@@ -16,7 +16,6 @@ RUN git clone https://github.com/zeromq/libzmq.git /usr/src/libzmq && \
     rm -rf /usr/src/libzmq/.git
 
 COPY . /root/sqlite-setab
-
 WORKDIR /root/sqlite-setab
 
 RUN buck build //build:setup_ubuntu

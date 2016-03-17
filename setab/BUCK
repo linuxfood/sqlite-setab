@@ -19,12 +19,6 @@
 # IN THE SOFTWARE.
 
 cxx_library(
-    name = 'sqlite',
-    srcs = [ 'sqlite3.c' ],
-    headers = [ 'sqlite3.h', 'sqlite3ext.h' ],
-)
-
-cxx_library(
     name = 'util',
     headers = [
         'ZmqMsg.h',
@@ -32,6 +26,7 @@ cxx_library(
     ],
     deps = [
         '//externals/folly:folly',
+        '//externals/sqlite3:sqlite3',
     ],
 )
 
@@ -41,10 +36,9 @@ cxx_binary(
         'engine.cpp',
     ],
     deps = [
-        ':sqlite',
         ':util',
-        '//externals/folly:folly',
         '//externals/boost:algorithm',
+        '//externals/folly:folly',
         '//externals/zeromq:zeromq',
     ],
 )
@@ -55,7 +49,6 @@ cxx_binary(
         'stream_maker.cpp'
     ],
     deps = [
-        ':sqlite',
         ':util',
         '//externals/zeromq:zeromq',
     ]

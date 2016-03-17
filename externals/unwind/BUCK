@@ -1,0 +1,9 @@
+cxx_library(
+    name = 'unwind',
+    visibility = [
+        'PUBLIC',
+    ],
+    exported_linker_flags = [
+        '-lunwind',
+    ],
+)

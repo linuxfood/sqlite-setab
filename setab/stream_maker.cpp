@@ -22,6 +22,7 @@
  */
 #include "Util.h"
 
+#include <folly/Format.h>
 #include <folly/Range.h>
 #include <folly/String.h>
 
@@ -53,9 +54,9 @@ int main(int argc, char** argv) {
     void* zctx = zmq_ctx_new();
     void* zsock = zmq_socket(zctx, ZMQ_PUSH);
 
-    Sqlite3Ptr<char> addr(sqlite3_mprintf("tcp://127.0.0.1:%d", port));
-    std::cout << "Connecting to: " << addr.get() << "\n";
-    if (zmq_connect(zsock, addr.get()) == -1) {
+    string addr{folly::sformat("tcp://127.0.0.1:{:d}", port)};
+    std::cout << "Connecting to: " << addr << "\n";
+    if (zmq_connect(zsock, addr.c_str()) == -1) {
         std::cout << "Unable to connect: " << zmq_strerror(zmq_errno()) << "\n";
         zmq_ctx_term(zctx);
         return 1;

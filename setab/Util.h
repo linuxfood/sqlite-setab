@@ -13,8 +13,9 @@
 #include <queue>
 #include <vector>
 
-#include "zeromq/zmq.h"
-#include "sqlite3.h"
+#include <zeromq/zmq.h>
+#include <sqlite3/sqlite3.h>
+
 #include "ZmqMsg.h"
 
 
