@@ -1,9 +1,0 @@
-cxx_library(
-    name = 'dl',
-    visibility = [
-        'PUBLIC',
-    ],
-    exported_linker_flags = [
-        '-ldl',
-    ],
-)

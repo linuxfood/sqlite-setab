@@ -1,4 +1,6 @@
 *.swp
+.gdb_history
+.buckd/*
 buck-out/*
 .buckconfig.local
 

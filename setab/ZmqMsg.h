@@ -22,6 +22,12 @@
  */
 #pragma once
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include <zeromq/zmq.h>
+
 class ZmqMsg
 {
 public:
@@ -97,7 +103,7 @@ public:
         std::copy( m, m + len, static_cast<char*>( zmq_msg_data( &_msg ) ) );
     }
 
-#if (ZMQ_VERSION >= (ZMQ_MAKE_VERSION(4,2,0)))
+#if (ZMQ_VERSION >= ZMQ_MAKE_VERSION(4,2,0))
     ZmqMsg& set_client_id( uint32_t id ) { zmq_msg_set_routing_id( &_msg, id ); return *this; }
     uint32_t get_client_id() const { return zmq_msg_routing_id( const_cast<zmq_msg_t*>( &_msg ) ); }
 #endif

@@ -1,3 +1,4 @@
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 cxx_library(
     name = 'unwind',
     visibility = [

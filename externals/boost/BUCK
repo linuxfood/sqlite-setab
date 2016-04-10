@@ -1,9 +1,16 @@
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 cxx_library(
     name = 'core',
     visibility = [ 'PUBLIC' ],
     header_namespace = 'boost',
     exported_headers = subdir_glob([
         ("include/boost", "core/**/*.hpp"),
+        ("include/boost", "io/**/*.hpp"),
+        ("include/boost", "checked_delete.hpp"),
+        ("include/boost", "integer_traits.hpp"),
+        ("include/boost", "ref.hpp"),
+        ("include/boost", "type.hpp"),
+        ("include/boost", "io_fwd.hpp"),
     ]),
 )
 
@@ -15,6 +22,7 @@ cxx_library(
         ("include/boost", "config/**/*.hpp"),
         ("include/boost", "detail/**/*.hpp"),
         ("include/boost", "config.hpp"),
+        ("include/boost", "version.hpp"),
         ("include/boost", "static_assert.hpp"),
         ("include/boost", "noncopyable.hpp"),
         ("include/boost", "operators.hpp"),
@@ -22,6 +30,33 @@ cxx_library(
     ]),
     exported_deps = [
         ':core',
+    ],
+)
+
+cxx_library(
+    name = 'assert',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "assert.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+        ':functional',
+    ],
+)
+
+cxx_library(
+    name = 'atomic',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "atomic/**/*.hpp"),
+        ("include/boost", "atomic.hpp"),
+        ("include/boost", "memory_order.hpp"),
+    ]),
+    exported_deps = [
+        ':type_traits',
     ],
 )
 
@@ -34,6 +69,139 @@ cxx_library(
     ]),
     exported_deps = [
         ':type_traits',
+    ],
+)
+
+cxx_library(
+    name = 'aligned_storage',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "aligned_storage/**/*.hpp"),
+        ("include/boost", "aligned_storage.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+cxx_library(
+    name = 'bind',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "bind/**/*.hpp"),
+        ("include/boost", "bind.hpp"),
+        ("include/boost", "mem_fn.hpp"),
+        ("include/boost", "is_placeholder.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+        ':signal',
+    ],
+)
+
+cxx_library(
+    name = 'chrono',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "chrono/**/*.hpp"),
+        ("include/boost", "chrono/**/*.ipp"),
+        ("include/boost", "chrono.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+        ':memory',
+        ':ratio',
+    ],
+)
+
+cxx_library(
+    name = 'date_time',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "date_time/**/*.hpp"),
+        ("include/boost", "date_time/**/*.ipp"),
+        ("include/boost", "date_time.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+        ':memory',
+    ],
+)
+
+cxx_library(
+    name = 'functional',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "functional/**/*.hpp"),
+        ("include/boost", "function/**/*.hpp"),
+        ("include/boost", "current_function.hpp"),
+        ("include/boost", "functional.hpp"),
+        ("include/boost", "function.hpp"),
+        ("include/boost", "function_equal.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+        ':integer',
+    ],
+)
+
+cxx_library(
+    name = 'integer',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "integer/**/*.hpp"),
+        ("include/boost", "integer_fwd.hpp"),
+        ("include/boost", "integer.hpp"),
+    ]),
+    exported_deps = [
+        ':type_traits',
+    ],
+)
+
+cxx_library(
+    name = 'move',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "move/**/*.hpp"),
+        ("include/boost", "move.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+    ],
+)
+
+cxx_library(
+    name = 'ratio',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "ratio/**/*.hpp"),
+        ("include/boost", "ratio.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
+        ':memory',
+    ],
+)
+
+cxx_library(
+    name = 'signal',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "signal/**/*.hpp"),
+        ("include/boost", "signal.hpp"),
+        ("include/boost", "visit_each.hpp"),
+    ]),
+    exported_deps = [
+        ':config',
     ],
 )
 
@@ -80,18 +248,6 @@ cxx_library(
     ]
 )
 
-cxx_library(
-    name = 'aligned_storage',
-    visibility = [ 'PUBLIC' ],
-    header_namespace = 'boost',
-    exported_headers = subdir_glob([
-        ("include/boost", "aligned_storage/**/*.hpp"),
-        ("include/boost", "aligned_storage.hpp"),
-    ]),
-    deps = [
-        ':config',
-    ]
-)
 
 cxx_library(
     name = 'utility',
@@ -100,6 +256,7 @@ cxx_library(
     exported_headers = subdir_glob([
         ("include/boost", "utility/**/*.hpp"),
         ("include/boost", "utility.hpp"),
+        ("include/boost", "next_prior.hpp"),
     ]),
     deps = [
         ':config',
@@ -114,6 +271,154 @@ cxx_library(
         ("include/boost", "iterator/**/*.hpp"),
         ("include/boost", "iterator.hpp"),
         ("include/boost", "iterator_adaptors.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+cxx_library(
+    name = 'multi_index',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "multi_index/**/*.hpp"),
+        ("include/boost", "multi_index_container.hpp"),
+        ("include/boost", "multi_index_container_fwd.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+cxx_library(
+    name = 'memory',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "smart_ptr/**/*.hpp"),
+        ("include/boost", "shared_ptr.hpp"),
+        ("include/boost", "make_shared.hpp"),
+        ("include/boost", "make_unique.hpp"),
+        ("include/boost", "enable_shared_from_this.hpp"),
+        ("include/boost", "get_pointer.hpp"),
+        ("include/boost", "scoped_array.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+cxx_library(
+    name = 'optional',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "optional/**/*.hpp"),
+        ("include/boost", "optional.hpp"),
+        ("include/boost", "none.hpp"),
+        ("include/boost", "none_t.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+cxx_library(
+    name = 'predef',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "predef/**/*.h"),
+        ("include/boost", "predef.h"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+cxx_library(
+    name = 'tuple',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "tuple/**/*.hpp"),
+        ("include/boost", "thread.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ],
+)
+
+prebuilt_cxx_library(
+    name = 'thread',
+    lib_name = 'boost_thread',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "thread/**/*.hpp"),
+        #("include/boost", "thread.hpp"),
+    ]),
+    deps = [
+        ':atomic',
+        ':bind',
+        ':config',
+        ':chrono',
+        ':date_time',
+        ':move',
+        ':optional',
+        ':tuple',
+        ':utility',
+    ]
+)
+
+prebuilt_cxx_library(
+    name = 'system',
+    lib_name = 'boost_system',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "exception/**/*.hpp"),
+        ("include/boost", "system/**/*.hpp"),
+        ("include/boost", "cstdint.hpp"),
+        ("include/boost", "cstdlib.hpp"),
+        ("include/boost", "cstdfloat.hpp"),
+        ("include/boost", "cerrno.hpp"),
+        ("include/boost", "limits.hpp"),
+        ("include/boost", "throw_exception.hpp"),
+        ("include/boost", "exception_ptr.hpp"),
+    ]),
+    deps = [
+        ':assert',
+        ':config',
+        ':predef',
+    ]
+)
+
+prebuilt_cxx_library(
+    name = 'regex',
+    lib_name = 'boost_regex',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "regex.hpp"),
+        ("include/boost", "regex_fwd.hpp"),
+        ("include/boost", "regex.h"),
+        ("include/boost", "regex/**/*.hpp"),
+    ]),
+    deps = [
+        ':config',
+    ]
+)
+
+prebuilt_cxx_library(
+    name = 'program_options',
+    lib_name = 'boost_program_options',
+    visibility = [ 'PUBLIC' ],
+    header_namespace = 'boost',
+    exported_headers = subdir_glob([
+        ("include/boost", "program_options.hpp"),
+        ("include/boost", "program_options/**/*.hpp"),
     ]),
     deps = [
         ':config',

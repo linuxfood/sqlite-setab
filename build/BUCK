@@ -1,3 +1,4 @@
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 genrule(
     name = 'setup_nix',
     srcs = [ 'setup_symlinks.sh' ],

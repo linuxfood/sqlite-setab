@@ -1,3 +1,4 @@
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 prebuilt_cxx_library(
     name = 'folly',
     lib_name = 'folly',
@@ -8,11 +9,16 @@ prebuilt_cxx_library(
     visibility = [
         'PUBLIC',
     ],
-    deps = [
+    exported_deps = [
         '//externals/boost:iterator',
+        '//externals/boost:program_options',
+        '//externals/boost:regex',
+        '//externals/boost:system',
+        '//externals/boost:thread',
         '//externals/boost:type_traits',
         '//externals/double-conversion:double-conversion',
         '//externals/glog:glog',
         '//externals/google-gflags:gflags',
+        '//externals/system:pthread',
     ],
 )

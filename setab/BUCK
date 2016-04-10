@@ -20,13 +20,32 @@
 
 cxx_library(
     name = 'util',
-    headers = [
-        'ZmqMsg.h',
-        'Util.h',
+    srcs = [
+        'Util.cpp',
     ],
-    deps = [
+    exported_headers = [
+        'Util.h',
+        'ZmqMsg.h',
+    ],
+    exported_deps = [
         '//externals/folly:folly',
         '//externals/sqlite3:sqlite3',
+        '//externals/zeromq:zeromq',
+    ],
+)
+
+cxx_library(
+    name = 'setab_core',
+    srcs = [
+        'Setab.cpp',
+    ],
+    exported_headers = [
+        'Registry.h',
+        'Row.h',
+        'Setab.h',
+    ],
+    deps = [
+        ':util',
     ],
 )
 
@@ -36,10 +55,9 @@ cxx_binary(
         'engine.cpp',
     ],
     deps = [
-        ':util',
         '//externals/boost:algorithm',
-        '//externals/folly:folly',
-        '//externals/zeromq:zeromq',
+        ':setab_core',
+        ':util',
     ],
 )
 
@@ -50,6 +68,5 @@ cxx_binary(
     ],
     deps = [
         ':util',
-        '//externals/zeromq:zeromq',
     ]
 )

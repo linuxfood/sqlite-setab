@@ -1,76 +1,44 @@
 #pragma once
 
-#include <algorithm>
-#include <cstdlib>
-#include <cctype>
-#include <chrono>
-#include <iostream>
-#include <memory>
-#include <random>
-#include <string>
-#include <tuple>
-#include <thread>
-#include <queue>
-#include <vector>
-
-#include <zeromq/zmq.h>
-#include <sqlite3/sqlite3.h>
-
 #include "ZmqMsg.h"
 
+#include <algorithm>
+#include <cctype>
+#include <chrono>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <queue>
+#include <random>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <tuple>
+#include <vector>
+
+#include <folly/Range.h>
+#include <sqlite3/sqlite3.h>
+#include <zeromq/zmq.h>
 
 using std::swap;
 using std::move;
 using std::string;
 using std::to_string;
 using std::vector;
+using std::unordered_map;
+
 using namespace std::chrono;
 
 constexpr char ColSep = '\036';
 
-milliseconds nowMs() {
-    return duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-}
+milliseconds nowMs();
 
-string trimString(string inString) {
-    auto b = inString.begin();
-    auto e = inString.end();
+string trimString(string inString);
+string trimQuotes(string inString);
 
-    while(std::isspace(*b)) { b++; }
-    while(std::isspace(*e)) { e--; }
+string lcString(string inString);
 
-    return string(b, e);
-}
-
-string trimQuotes(string inString) {
-    auto b = inString.begin();
-    auto e = inString.begin();
-
-    while (*b == '\'') { b++; }
-    e = b;
-    while (*e != '\'' && e != inString.end()) { e++; }
-
-    return string(b, e);
-}
-
-string lcString(string inString) {
-    for (auto& c : inString) {
-        c = std::tolower(c);
-    }
-    return inString;
-}
-
-string joinVector(const vector<string>& c, string delim=",") {
-    string result;
-    auto i = std::begin(c);
-    result.append(*i);
-    i++;
-    while (i != std::end(c)) {
-        result.append(delim).append(*i);
-        i++;
-    }
-    return result;
-}
+string joinVector(const vector<string>& c, string delim=",");
 
 template<class T>
 T randomValue(T lowerBound, T upperBound) {
@@ -92,6 +60,8 @@ class Sqlite3Exception : public std::runtime_error {
 public:
     Sqlite3Exception(const char* what) : std::runtime_error(what) {}
 };
+
+using Sqlite3ValueRange = folly::Range<sqlite3_value*>;
 
 class Sqlite3Db {
     sqlite3* db_{nullptr};

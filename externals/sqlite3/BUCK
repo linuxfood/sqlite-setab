@@ -1,12 +1,14 @@
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 cxx_library(
     name = 'sqlite3',
     srcs = [ 'sqlite3.c' ],
     header_namespace = 'sqlite3',
     exported_headers = [ 'sqlite3.h', 'sqlite3ext.h' ],
     deps = [
-        '//externals/dl:dl',
+        '//externals/system:dl',
+        '//externals/system:pthread',
     ],
     visibility = [
         'PUBLIC',
-    ],
+    ]
 )

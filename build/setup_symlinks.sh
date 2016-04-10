@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 set -x
 
 FLOOP="${1}"

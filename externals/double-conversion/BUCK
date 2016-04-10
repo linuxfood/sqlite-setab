@@ -1,3 +1,4 @@
+# Copyright Brian Smith <brian@linuxfood.net> 2016
 prebuilt_cxx_library(
     name = 'double-conversion',
     header_namespace = 'double-conversion',
