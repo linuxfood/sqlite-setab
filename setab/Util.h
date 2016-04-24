@@ -28,6 +28,7 @@ using std::vector;
 using std::unordered_map;
 
 using namespace std::chrono;
+using namespace std::chrono_literals;
 
 constexpr char ColSep = '\036';
 
