@@ -45,15 +45,29 @@ struct Column {
  */
 class Row {
     int64_t rowId_;
+    size_t cachedSize_;
     vector<ColumnValue> columns_;
 
+    static size_t computeSize(const vector<ColumnValue>& cols) {
+        size_t sz = sizeof(rowId_) + sizeof(cachedSize_) + sizeof(columns_);
+        for (const auto& col : cols) {
+            sz += sizeof(ColumnValue);
+            if (std::get<0>(col) == ColumnType::TEXT) {
+                sz += std::get<1>(col).size();
+            }
+        }
+        return sz;
+    }
 public:
 
+    Row() : rowId_{-1}, cachedSize_{computeSize({})}, columns_{} {}
+
     explicit Row(int64_t rowId)
-        : rowId_{rowId}, columns_{} {}
+        : rowId_{rowId}, cachedSize_{computeSize({})}, columns_{} {}
 
     explicit Row(int64_t rowId, vector<ColumnValue> columns)
-        : rowId_{rowId}, columns_{columns.begin(), columns.end()} {}
+        : rowId_{rowId}, cachedSize_{computeSize(columns)}, columns_{columns.begin(), columns.end()} {
+    }
 
     int64_t rowId() const { return rowId_; }
 
@@ -70,12 +84,11 @@ public:
     bool consumed() const { return false; }
 
     void setConsumed() {}
+
+    size_t size() const {
+        return cachedSize_;
+    }
 };
-
-using RowPtr = std::shared_ptr<const Row>;
-
-inline RowPtr getRow(int64_t rowId) { return std::make_shared<const Row>(rowId); }
-inline RowPtr getRow(int64_t rowId, vector<ColumnValue> columns) { return std::make_shared<const Row>(rowId, columns); }
 
 inline std::ostream& operator<<(std::ostream& o, const Row& r) {
     o << "Row:ts=" << r.ts().count()
