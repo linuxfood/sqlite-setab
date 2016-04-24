@@ -28,3 +28,14 @@ cxx_test(
         '//setab:stream_time',
     ],
 )
+
+cxx_test(
+    name = 'row_buffer',
+    srcs = [
+        'RowBufferTests.cpp',
+    ],
+    deps = [
+        '//setab:util',
+        '//setab:setab_core',
+    ],
+)

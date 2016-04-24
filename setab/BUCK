@@ -52,6 +52,7 @@ cxx_library(
     exported_headers = [
         'Registry.h',
         'Row.h',
+        'RowBuffer.h',
         'Setab.h',
     ],
     deps = [
