@@ -79,5 +79,6 @@ cxx_binary(
     ],
     deps = [
         ':util',
+        '//externals/boost:program_options',
     ]
 )

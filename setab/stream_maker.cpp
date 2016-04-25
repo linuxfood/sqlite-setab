@@ -22,9 +22,12 @@
  */
 #include "Util.h"
 
+#include <boost/program_options.hpp>
 #include <folly/Format.h>
 #include <folly/Range.h>
 #include <folly/String.h>
+
+namespace po = boost::program_options;
 
 static vector<string> messageValues = {
     "mass-blaster",
@@ -34,29 +37,32 @@ static vector<string> messageValues = {
     "wiz-kid thelma the cool"
 };
 
+
 int main(int argc, char** argv) {
-    int port = 6000;
-    milliseconds jitterMs(1500);
-    if (argc == 3) {
-        char* end = nullptr;
-        port = std::strtol(argv[1], &end, 10);
-        if (end == argv[1] || !port) {
-            std::cout << "Port is bad.\n";
-            return 1;
-        }
-        end = nullptr;
-        milliseconds jitterMsArg(std::strtoll(argv[2], &end, 10));
-        if (end != argv[2] && jitterMsArg.count()) {
-            jitterMs = jitterMsArg;
-        }
+    po::options_description opts("stream_maker options");
+    opts.add_options()
+        ("help,h", "This help.")
+        ("destination,d", po::value<string>()->default_value("tcp://127.0.0.1:6000"),
+         "Stream destination.")
+        ("jitter,j", po::value<int>()->default_value(1500),
+         "Random interval to wait before sending each message.")
+    ;
+    po::variables_map options;
+    po::store(po::parse_command_line(argc, argv, opts), options);
+    po::notify(options);
+
+    if (options.count("help")) {
+        std::cout << opts << "\n";
+        return 1;
     }
+    string destination = options["destination"].as<string>();
+    milliseconds jitterMs = milliseconds(options["jitter"].as<int>());
 
     void* zctx = zmq_ctx_new();
     void* zsock = zmq_socket(zctx, ZMQ_PUSH);
 
-    string addr{folly::sformat("tcp://127.0.0.1:{:d}", port)};
-    std::cout << "Connecting to: " << addr << "\n";
-    if (zmq_connect(zsock, addr.c_str()) == -1) {
+    std::cout << "Connecting to: " << destination << "\n";
+    if (zmq_connect(zsock, destination.c_str()) == -1) {
         std::cout << "Unable to connect: " << zmq_strerror(zmq_errno()) << "\n";
         zmq_ctx_term(zctx);
         return 1;
