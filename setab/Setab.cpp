@@ -84,7 +84,7 @@ int setab_next(sqlite3_vtab_cursor* pSetabCursor) {
 int setab_column(sqlite3_vtab_cursor* pSetabCursor, sqlite3_context* pContext, int N) {
     SetabCursor* cursor = reinterpret_cast<SetabCursor*>(pSetabCursor);
     //std::cout << "xColumn(" << N << "): ";
-    const auto& col = cursor->row()->columns()[N];
+    const auto& col = cursor->row().columns()[N];
     if (std::get<0>(col) == ColumnType::INTEGER) {
         //std::cout << std::get<2>(col) << "\n";
         sqlite3_result_int64(pContext, std::get<2>(col));

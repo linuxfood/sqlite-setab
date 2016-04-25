@@ -26,6 +26,7 @@
 #include "setab/Util.h"
 #include "setab/Registry.h"
 #include "setab/Row.h"
+#include "setab/RowBuffer.h"
 
 #include <folly/Conv.h>
 #include <folly/FileUtil.h>
@@ -56,7 +57,7 @@ class Setab {
 
     milliseconds windowSizeMs_;
 
-    std::queue<std::unique_ptr<Row>> queuedRows_;
+    std::unique_ptr<RowBuffer> rows_;
 public:
     Setab(sqlite3* db, SetabRegistry* registry, string tableName, vector<string> rawTableArgs)
         : vTableBase_{},
@@ -74,8 +75,12 @@ public:
           batchSize_{10000},
           batchStart_{0},
           currentRowId_{0},
-          windowSizeMs_{100*1000} {
+          windowSizeMs_{100*1000},
+          rows_{nullptr} {
 
+        size_t maxBufferedRows = 100000;
+        size_t maxBufferedBytes = 100000;
+        milliseconds maxBufferedAge = 30min;
         std::cout << "Create debug..\n";
         for (size_t i=0; i<rawTableArgs_.size(); i++) {
             std::cout << "arg:" << i << " value:'" << rawTableArgs_[i] << "'\n";
@@ -141,8 +146,16 @@ public:
                 batchSize_ = std::stoi(value);
             } else if (key == "window_size_ms") {
                 windowSizeMs_ = milliseconds(std::stoi(value));
+            } else if (key == "max_buffered_rows") {
+                maxBufferedRows = std::stoi(value);
+            } else if (key == "max_buffered_bytes") {
+                maxBufferedBytes = std::stoi(value);
+            } else if (key == "max_buffered_age_ms") {
+                maxBufferedAge = milliseconds(std::stoi(value));
             }
         }
+
+        rows_.reset(new RowBuffer(maxBufferedRows, maxBufferedBytes, maxBufferedAge));
 
         // If the table doesn't listen, and doesn't connect, then what good is it?
         if (listenPort_ <= 0 && nextHopService_.empty()) {
@@ -255,30 +268,27 @@ public:
         return true;
     }
 
-    std::unique_ptr<Row> readRow(bool dontWait) {
-        if (!queuedRows_.empty()) {
-            auto row = move(queuedRows_.front());
-            queuedRows_.pop();
-            return row;
-        }
+    RowCursor getCursor() const {
+        return rows_->getCursor();
+    }
+
+    // Reads a row from the underlying stream.
+    // Inserts row into the buffer if successful, otherwise does nothing.
+    void backendRead() {
         ZmqMsg m;
         vector<ColumnValue> columns;
 
-        currentRowId_++;
-        if (zmq_msg_recv((zmq_msg_t*)m, readSock_, dontWait ? ZMQ_DONTWAIT : 0) == -1) {
+        if (zmq_msg_recv((zmq_msg_t*)m, readSock_, 0 /* wait */) == -1) {
             std::cout << "ZMQ error(" << zmq_errno() << "): " << zmq_strerror(zmq_errno()) << "\n";
-            return std::unique_ptr<Row>(new Row{currentRowId_});
+            return;
         }
 
         if (!parse(move(m), columns)) {
-            return std::unique_ptr<Row>(new Row{currentRowId_});
+            return;
         }
 
-        return std::unique_ptr<Row>(new Row{currentRowId_, move(columns)});
-    }
-
-    void requeue(std::unique_ptr<Row> row) {
-        queuedRows_.emplace(move(row));
+        currentRowId_++;
+        rows_->appendRow(Row(currentRowId_, move(columns)));
     }
 
     bool batchConsumed(int64_t rowId, int64_t batchStart, milliseconds cursorOpenedMs) {
@@ -371,7 +381,7 @@ class SetabCursor {
     int64_t batchStart_;
     milliseconds cursorOpened_;
 
-    std::unique_ptr<Row> row_;
+    RowCursor cursor_;
     
 public:
     SetabCursor(Setab* parent)
@@ -379,45 +389,40 @@ public:
           parent_{parent},
           batchStart_{-1},
           cursorOpened_{nowMs()},
-          row_{nullptr} {
+          cursor_(parent->getCursor()) {
     }
 
     sqlite3_vtab_cursor* vTableCursorBase() { return &vTableCursorBase_; }
 
     bool isEOF() {
-        bool batchDone = parent_->batchConsumed(rowId(), batchStart_, cursorOpened_);
-        if (batchDone && !row_->consumed()) {
-            parent_->requeue(move(row_));
-        }
-        return batchDone;
+        return parent_->batchConsumed(rowId(), batchStart_, cursorOpened_);
     }
 
     int64_t rowId() const {
-        return row_ ? row_->rowId() : -1;
+        return row().rowId();
     }
 
     int64_t seekUntilTime(milliseconds epoch, int seekType) {
         while (true) {
             int64_t batchStart = nextRow();
             if (seekType == SQLITE_INDEX_CONSTRAINT_GE) {
-                if (row_->ts() >= epoch) {
+                if (row().ts() >= epoch) {
                     return batchStart;
                 }
             } else if (seekType == SQLITE_INDEX_CONSTRAINT_GT) {
-                if (row_->ts() > epoch) {
+                if (row().ts() > epoch) {
                     return batchStart;
                 }
             }
-            std::cout << "Row too old: " << *row_ << "\n";
+            std::cout << "Row too old: " << row() << "\n";
         }
     }
     
     int64_t nextRow() {
-        auto newRow = parent_->readRow(false);
-        while (!newRow->valid()) { newRow = move(parent_->readRow(false)); }
-        row_ = move(newRow);
-        //std::cout << "nextRow(): " << *row_ << "\n";
-        return row_->rowId();
+        while (!cursor_.next()) {
+            parent_->backendRead(); /* poll the stream */
+        }
+        return rowId();
     }
 
     int filter(int idxNum, std::vector<sqlite3_value*> values) {
@@ -440,7 +445,7 @@ public:
         return SQLITE_OK;
     }
 
-    const Row* row() const { row_->setConsumed(); return row_.get(); }
+    const Row& row() const { return cursor_.get(); }
 };
 
 sqlite3_module* Sqlite3SetabModule();
