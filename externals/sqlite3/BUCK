@@ -12,3 +12,17 @@ cxx_library(
         'PUBLIC',
     ]
 )
+
+cxx_library(
+    name = 'sqlite3more',
+    srcs = [ 'sqlite3more.c' ],
+    header_namespace = 'sqlite3',
+    exported_headers = [ 'sqlite3more.h', 'sqlite3.h' ],
+    deps = [
+        '//externals/system:dl',
+        '//externals/system:pthread',
+    ],
+    visibility = [
+        'PUBLIC',
+    ]
+)
