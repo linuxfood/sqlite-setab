@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include <zeromq/zmq.h>
+#include <zmq.h>
 
 class ZmqMsg
 {

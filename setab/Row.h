@@ -22,7 +22,9 @@
  */
 #pragma once
 
+#include "setab/Sqlite.h"
 #include "setab/Util.h"
+
 
 enum class ColumnType {
     INTEGER = SQLITE_INTEGER,

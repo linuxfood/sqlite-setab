@@ -27,6 +27,7 @@
 #include "setab/Registry.h"
 #include "setab/Row.h"
 #include "setab/RowBuffer.h"
+#include "setab/Sqlite.h"
 
 #include <folly/Conv.h>
 #include <folly/FileUtil.h>

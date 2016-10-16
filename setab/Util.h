@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ZmqMsg.h"
+#include "setab/ZmqMsg.h"
 
 #include <algorithm>
 #include <cctype>
@@ -17,8 +17,6 @@
 #include <vector>
 
 #include <folly/Range.h>
-#include <sqlite3/sqlite3.h>
-#include <zeromq/zmq.h>
 
 using std::swap;
 using std::move;
@@ -49,50 +47,10 @@ T randomValue(T lowerBound, T upperBound) {
     return dis(gen);
 }
 
-template<class T>
-struct Sqlite3FreeDeleter {
-    void operator()(T* ptr) { sqlite3_free(ptr); }
-};
+// Extracts content of C-Style comments from text.
+// /* some comment text */ = " some comment text "
+// /**/ = ""
+folly::StringPiece extractComment(folly::StringPiece query);
 
-template<class T>
-using Sqlite3Ptr = typename std::unique_ptr<T, Sqlite3FreeDeleter<T>>;
-
-class Sqlite3Exception : public std::runtime_error {
-public:
-    Sqlite3Exception(const char* what) : std::runtime_error(what) {}
-};
-
-using Sqlite3ValueRange = folly::Range<sqlite3_value*>;
-
-class Sqlite3Db {
-    sqlite3* db_{nullptr};
-public:
-    Sqlite3Db() noexcept {}
-
-    void open(const string& path) {
-        if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK) {
-            throw Sqlite3Exception(sqlite3_errmsg(db_));
-        }
-    }
-
-    void close() {
-        sqlite3_close(db_);
-        db_ = nullptr;
-    }
-
-    void exec(const string& sql) {
-        char* errorMsg = nullptr;
-        sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &errorMsg);
-        if (errorMsg) {
-            throw Sqlite3Exception(errorMsg);
-        }
-    }
-
-    sqlite3* raw() { return db_; }
-    const char* errmsg() const { return sqlite3_errmsg(db_); }
-
-    ~Sqlite3Db() {
-        close();
-    }
-};
-
+// Extracts key=value pairs from some text.
+std::unordered_map<std::string, std::string> extractKVPairs(folly::StringPiece text);
