@@ -1,22 +1,5 @@
-FROM pjameson/buck-folly-watchman:latest
-
-# Commented until I have docker >=1.8
-#ARG ZMQ_SHA=96c9e4aabda5c040b29761638706a51f878a8bf0
-
-RUN git clone https://github.com/zeromq/libzmq.git /usr/src/libzmq && \
-    cd /usr/src/libzmq && \
-    mkdir build && \
-    cd build && \
-    git checkout 96c9e4aabda5c040b29761638706a51f878a8bf0 && \
-    ldconfig && \
-    cmake -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j2 && \
-    make install && \
-    make clean && \
-    rm -rf /usr/src/libzmq/.git
-
+FROM ubuntu:latest
 COPY . /root/sqlite-setab
 WORKDIR /root/sqlite-setab
 
-RUN buck build //build:setup_ubuntu
-RUN buck build //setab/...
+RUN /bin/bash setup_ubuntu.sh

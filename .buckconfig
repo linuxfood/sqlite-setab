@@ -1,5 +1,0 @@
-[buildfile]
-    includes = //build/defaults
-
-[cxx]
-    gtest_dep = //externals/googletest:googletest
