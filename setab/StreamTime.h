@@ -29,7 +29,8 @@
 
 template<class Time=milliseconds>
 class StreamTime {
-    using TimeSeries = folly::TimeseriesHistogram<int64_t, Time>;
+    using ClockType = folly::LegacyStatsClock<Time>;
+    using TimeSeries = folly::TimeseriesHistogram<int64_t, ClockType>;
 
     const Time maxDelta_;
     const double pct_;
@@ -62,7 +63,7 @@ public:
           history_{(maxDelta_.count() * 2) / 100,
                    -maxDelta.count(),
                    maxDelta.count(),
-                   folly::MultiLevelTimeSeries<int64_t, Time>(100, 2, intervals_)} {}
+                   folly::MultiLevelTimeSeries<int64_t, ClockType>(100, 2, intervals_)} {}
 
     explicit StreamTime(Time maxDelta) : StreamTime(maxDelta, sysNow()) {}
 
