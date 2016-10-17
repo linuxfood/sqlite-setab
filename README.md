@@ -82,10 +82,14 @@ Query finished.
 
 ## Building
 
-1. Get Buck. <https://buckbuild.com/>
-2. Make sure you have boost, double-conversion, folly, gflags, glog, zeromq
-3. `buck build build/:setup_ubuntu`
-4. run `buck build setab/...`
+Building is only supported on ubuntu 16.04 or above right now.  Setab requires
+Facebook's folly library, the setup script will install that in /usr/local.
+
+1. Get CMake
+2. `bash ubuntu_setup.sh`
+3. `mkdir build && cd build && cmake ..`
+4. `make`
+5. `./setab/setab test.db ../setab/test1.json`
 
 If you successfully pull that off... Drop me a line.
 The code is absolutely riddled with bugs right now.
@@ -96,7 +100,8 @@ This works now! This is probably the easiest way to build and run this.
 
 ```
 sudo docker build -t real_deal .
-sudo docker run real_deal /root/sqlite-setab/buck-out/gen/setab/setab test.db /root/sqlite-setab/setab/test.json
+sudo docker run -it real_deal /bin/bash
+# Then follow from step 3 above.
 ```
 
 ## License
