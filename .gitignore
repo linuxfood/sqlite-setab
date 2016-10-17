@@ -1,8 +1,4 @@
 *.swp
 .gdb_history
-.buckd/*
-buck-out/*
-.buckconfig.local
-
-externals/*/include
-externals/*/lib
+build/
+db/
