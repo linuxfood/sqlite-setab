@@ -42,7 +42,9 @@ include_directories(${SETAB_HOME})
 include_directories(${FOLLY_INCLUDE_DIR})
 
 add_subdirectory(${TP_PROJECTS_DIR}/gtest)
-include_directories(${GTEST_INCLUDE_DIRS})
+add_subdirectory(${TP_PROJECTS_DIR}/wangle)
+include_directories(${GTEST_INCLUDE_DIRS} ${WANGLE_INCLUDE_DIRS})
+
 enable_testing()
 add_subdirectory(setab)
 add_subdirectory(tests)
