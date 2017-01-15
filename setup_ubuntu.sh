@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-FOLLY_VERSION="2016.10.10.00"
+FOLLY_VERSION="2016.12.19.00"
 FOLLY_DIR="/usr/local/folly-${FOLLY_VERSION}"
 
 echo "This script configures ubuntu with everything needed to run setab."
@@ -17,6 +17,7 @@ apt install --yes \
     git \
     libboost-all-dev \
     libdouble-conversion-dev \
+    libdwarf-dev \
     libevent-dev \
     libgflags-dev \
     libgoogle-glog-dev \
@@ -24,13 +25,15 @@ apt install --yes \
     liblz4-dev \
     liblzma-dev \
     libsnappy-dev \
+    libsqlite3-dev \
     libssl-dev \
     libtool \
+    libunwind-dev \
+    libzmq3-dev \
     make \
     pkg-config \
     wget \
     zlib1g-dev \
-    libzmq3-dev
 
 wget -O /tmp/folly-${FOLLY_VERSION}.tar.gz https://github.com/facebook/folly/archive/v${FOLLY_VERSION}.tar.gz
 cd /tmp
