@@ -22,7 +22,7 @@ externalproject_add(
 
 # Specify include dir
 externalproject_get_property(gtest_tp SOURCE_DIR)
-set(GTEST_INCLUDE_DIRS ${SOURCE_DIR}/googletest/include PARENT_SCOPE)
+set(GTEST_INCLUDE_DIRS ${SOURCE_DIR}/googletest/include)
 
 # Specify MainTest's link libraries
 externalproject_get_property(gtest_tp BINARY_DIR)
@@ -42,6 +42,13 @@ set_target_properties(
     PROPERTIES
         IMPORTED_LINK_INTERFACE_LANGUAGES CXX
         IMPORTED_LOCATION ${GTEST_LIBS_DIR}/libgtest_main.a
+)
+
+set_property(
+  DIRECTORY ${CMAKE_SOURCE_DIR}
+
+  APPEND
+  PROPERTY INCLUDE_DIRECTORIES ${GTEST_INCLUDE_DIRS}
 )
 
 set(GTEST_HARNESS_LIBS gtest gtest_main Threads::Threads PARENT_SCOPE)

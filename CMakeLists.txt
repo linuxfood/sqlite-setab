@@ -27,11 +27,8 @@ find_package(
 find_package(Folly REQUIRED)
 find_package(GFlags REQUIRED)
 find_package(Glog REQUIRED)
-find_package(LibSqlite3 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(ZMQ REQUIRED)
 
-include(CheckFunctionExists)
 include(SetabCompilerOptions)
 
 set(SETAB_HOME ${CMAKE_CURRENT_SOURCE_DIR})
@@ -42,8 +39,8 @@ include_directories(${SETAB_HOME})
 include_directories(${FOLLY_INCLUDE_DIR})
 
 add_subdirectory(${TP_PROJECTS_DIR}/gtest)
-add_subdirectory(${TP_PROJECTS_DIR}/wangle)
-include_directories(${GTEST_INCLUDE_DIRS} ${WANGLE_INCLUDE_DIRS})
+add_subdirectory(${TP_PROJECTS_DIR}/sqlite3)
+add_subdirectory(${TP_PROJECTS_DIR}/zeromq)
 
 enable_testing()
 add_subdirectory(setab)
